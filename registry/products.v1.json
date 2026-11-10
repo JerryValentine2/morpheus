@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "morpheus_product_registry",
+  "owner_product_id": "morpheus_adaptive_ui",
+  "status": "PROPOSED_NOT_RUNTIME_ACTIVE",
+  "source_of_truth": "Morpheus project GitHub repository until deployed runtime storage/API is established",
+  "products": [
+    {
+      "product_id": "hippocrates_labs",
+      "display_name": "Hippocrates Labs",
+      "version": "1.0.0",
+      "approved": false,
+      "activation_enabled": false,
+      "apollo_spec_document_id": "7cbef5aab9304d42a75b3ca7d5264afc",
+      "adapter": "synthetic_lab_results"
+    },
+    {
+      "product_id": "calculator",
+      "display_name": "Calculator",
+      "version": "1.0.0",
+      "approved": false,
+      "activation_enabled": false,
+      "apollo_spec_document_id": "291c70cec4d941a59406da5fd7dca63b",
+      "adapter": "deterministic_arithmetic"
+    }
+  ],
+  "policy": {
+    "discover_only_approved": true,
+    "exact_version_required": true,
+    "fail_closed": true,
+    "atomic_switch": true,
+    "isolated_product_context": true
+  },
+  "notes": "This is a source-controlled candidate registry, not evidence of a deployed loader or authorized activation."
+}
