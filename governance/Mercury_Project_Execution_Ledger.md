@@ -2,8 +2,8 @@
 **Product ID:** `morpheus_adaptive_ui`
 **Product version:** V1.0 Draft
 **Project repository:** https://github.com/JerryValentine2/morpheus
-**Ledger status:** STAGE 00 ACTIVE — STOP until Apollo authority migration verified
-**Phase:** Pre-Phase 01 / Stage 00
+**Ledger status:** STAGE 00 PASS — Phase 01 Product Definition DRAFT, approval pending
+**Phase:** Phase 01 — Product Definition (not approved)
 **Final Mercury compliance:** PENDING
 **Created:** 2026-11-10
 **Apollo companion record:** `1468585d302e4c3997a04741cbefb910`
@@ -22,7 +22,7 @@
 | 09 | `/Mercury/templates/README.md` | LOADED |
 | 10 | `/Mercury/templates/00_Project_Execution_Ledger_Template.md` | LOADED |
 
-All ten were read from the exact authoritative historical Markdown sources. **Canonical Apollo migration/version pinning is not yet verified.** No similarly named Google Docs substituted.
+All ten were read from the exact authoritative historical Markdown sources and copied into Olympus Apollo with source path/provenance. Apollo save PASS for all ten, and representative search readback PASS. Exact-key transactional revision/version pinning and full-byte readback are engineering follow-ups, NOT asserted implemented. No similarly named Google Docs substituted.
 
 ## Conditional authorities
 - Aphrodite Web Server Architecture: **APPLICABLE — LOADED**, Morpheus web-server/Cloud Run architecture.
@@ -57,7 +57,8 @@ All ten were read from the exact authoritative historical Markdown sources. **Ca
 Apollo: authoritative product definition, behavioral/AI contracts, lifecycle decisions, evidence. GitHub: implementation, tests, executable schemas, infrastructure/configuration, and this project ledger. GCP/Cloud Run: deployment and operational runtime. Google Drive: legacy source only; not intended ongoing dependency.
 
 ## Open issues
-- **STOP-00-02**: Exact authoritative Mercury boot materials have not been migrated/version-verified in Apollo. Cannot assert no-Drive boot readiness.
+- **RESOLVED-00-02**: All ten mandatory boot files plus both conditional standards copied into Olympus Apollo, with source path and IDs. Representative search retrieval verified. Stage 00 authority-loading/migration gate PASS; future exact-key/versioned retrieval implementation remains tracked engineering requirement.
+- **ENG-LEDGER-01**: Apollo-primary / GitHub-snapshot architecture user-approved, but atomic exact-state updates and automated synchronization are not yet implemented; GitHub ledger remains operational fallback until verified.
 - **STOP-01-APPROVAL**: Morpheus Product Definition V1.0 Draft, Apollo `883724d28a844ee0a90280e1dfa8491c`, requires human approval before Phase 02.
 - Future phases and standards must be evidenced in this ledger, not assumed.
 
@@ -65,3 +66,6 @@ Apollo: authoritative product definition, behavioral/AI contracts, lifecycle dec
 Original Apollo Stage 00 record: `7beaeedb04174fdfa083ed1720b4f4a5`.
 Apollo initialized ledger: `1468585d302e4c3997a04741cbefb910`.
 Olympus system responsibility contract: `27c1cf4bdced4776ad2cb6ed93ff3b21`.
+
+## Stage 00 completion — 2026-11-10
+**Disposition: PASS for Mercury Stage 00 project initialization.** All ten mandatory boot authorities loaded; both applicable conditional authorities loaded; project repository and populated project ledger verified in GitHub; twelve authoritative source mirrors saved to Olympus Apollo; Apollo search readback verified for representative sources. Existing Morpheus Phase 01 draft remains unapproved. Approved Olympus architecture intends Apollo-primary/GitHub-snapshot, with exact-version and sync automation still unverified engineering work. Stage 00 PASS does not imply Phase 01 PASS or permission to start automated Phases 02–06.
