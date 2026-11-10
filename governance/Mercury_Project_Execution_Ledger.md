@@ -1,9 +1,9 @@
 # Morpheus — Mercury Project Execution Ledger
 **Product ID:** `morpheus_adaptive_ui`
-**Product version:** V1.0 Draft
+**Product version:** V1.0 APPROVED
 **Project repository:** https://github.com/JerryValentine2/morpheus
-**Ledger status:** STAGE 00 PASS — Phase 01 Product Definition DRAFT, approval pending
-**Phase:** Phase 01 — Product Definition (not approved)
+**Ledger status:** STAGE 00 PASS — Phase 01 PASS; Phase 02 ACTIVE
+**Phase:** Phase 02 — Behavioral Contracts (in progress)
 **Final Mercury compliance:** PENDING
 **Created:** 2026-11-10
 **Apollo companion record:** `1468585d302e4c3997a04741cbefb910`
@@ -31,8 +31,8 @@ All ten were read from the exact authoritative historical Markdown sources and c
 ## Mercury phase ledger
 | Phase / gate | Status |
 |---|---|
-| 01 Product Definition | DRAFT; HUMAN APPROVAL PENDING |
-| 02 Behavioral Contract | NOT STARTED |
+| 01 Product Definition | PASS — human approved 2026-11-10; Apollo a4cd9650b8844c8394433de5f0946dc7 |
+| 02 Behavioral Contract | IN PROGRESS — authorized after Phase 01 PASS |
 | 03 Behavioral Validation | NOT STARTED |
 | 04 Design | NOT STARTED |
 | 05 AI-First JSON Contracts | NOT STARTED |
@@ -59,7 +59,7 @@ Apollo: authoritative product definition, behavioral/AI contracts, lifecycle dec
 ## Open issues
 - **RESOLVED-00-02**: All ten mandatory boot files plus both conditional standards copied into Olympus Apollo, with source path and IDs. Representative search retrieval verified. Stage 00 authority-loading/migration gate PASS; future exact-key/versioned retrieval implementation remains tracked engineering requirement.
 - **ENG-LEDGER-01**: Apollo-primary / GitHub-snapshot architecture user-approved, but atomic exact-state updates and automated synchronization are not yet implemented; GitHub ledger remains operational fallback until verified.
-- **STOP-01-APPROVAL**: Morpheus Product Definition V1.0 Draft, Apollo `883724d28a844ee0a90280e1dfa8491c`, requires human approval before Phase 02.
+- **RESOLVED-01-APPROVAL**: User explicitly approved Product Definition V1.0, Apollo `d8df1a96eed24bf39251497e92d6bb5a`; final gate PASS Apollo `a4cd9650b8844c8394433de5f0946dc7`.
 - Future phases and standards must be evidenced in this ledger, not assumed.
 
 ## Traceability
@@ -69,3 +69,6 @@ Olympus system responsibility contract: `27c1cf4bdced4776ad2cb6ed93ff3b21`.
 
 ## Stage 00 completion — 2026-11-10
 **Disposition: PASS for Mercury Stage 00 project initialization.** All ten mandatory boot authorities loaded; both applicable conditional authorities loaded; project repository and populated project ledger verified in GitHub; twelve authoritative source mirrors saved to Olympus Apollo; Apollo search readback verified for representative sources. Existing Morpheus Phase 01 draft remains unapproved. Approved Olympus architecture intends Apollo-primary/GitHub-snapshot, with exact-version and sync automation still unverified engineering work. Stage 00 PASS does not imply Phase 01 PASS or permission to start automated Phases 02–06.
+
+## Phase 01 final gate — 2026-11-10
+**PASS.** Explicit human approval recorded for final V1 baseline `d8df1a96eed24bf39251497e92d6bb5a`. Apollo gate decision `a4cd9650b8844c8394433de5f0946dc7`. Future-State Work Register: none identified in scoped Apollo and repository searches; review if new authoritative source surfaces. Phase 02 Behavioral Contracts authorized and initiated; not yet PASS. No implementation authorization.
