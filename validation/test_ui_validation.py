@@ -24,7 +24,7 @@ class UITests(unittest.TestCase):
     def test_empty(self): self.reject([])
     def test_long_text(self): self.reject([{"type":"text","content":"x"*2001}])
     def test_many_rows(self): self.reject([{"type":"table","columns":["x"],"rows":[["x"]]*101}])
-    def test_boolean_cell(self): self.reject([{"type":"table","columns":["x"],"rows":[[True]]])
+    def test_boolean_cell(self): self.reject([{"type":"table","columns":["x"],"rows":[[True]]}])
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
