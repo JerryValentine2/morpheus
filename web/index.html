@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morpheus — Adaptive Product Preview</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#172333;background:#f3f6fb}
+*{box-sizing:border-box}body{margin:0}header{background:#15243a;color:white;padding:20px max(24px,calc((100vw - 920px)/2))}
+main{max-width:920px;margin:28px auto;padding:0 20px}.panel{background:white;border:1px solid #d9e1ed;border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 3px 14px #182b4010}
+h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 14px}.sub{color:#617187;font-size:14px}header .sub{color:#c1cce0}
+label{display:block;font-weight:650;margin-bottom:8px}select,textarea{width:100%;border:1px solid #aab8c9;border-radius:8px;padding:12px;font:inherit;background:white}
+textarea{min-height:100px;resize:vertical}button{background:#2459ac;color:white;border:0;border-radius:8px;padding:12px 18px;font-weight:650;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.note{font-size:13px;color:#785a17;background:#fff6df;border-radius:7px;padding:10px;margin-top:14px}
+.error{color:#9e2525}.component{padding:12px;border:1px solid #e1e7ef;border-radius:9px;margin-top:10px}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #d9e1ed;text-align:left;padding:9px}th{background:#f4f7fc}
+</style></head>
+<body>
+<header><h1>Morpheus</h1><div class="sub">Adaptive product interface · simulated integration preview</div></header>
+<main>
+<section class="panel"><h2>Choose a product</h2><label for="product">Apollo product</label><select id="product" disabled><option>Loading products…</option></select>
+<div class="toolbar"><button id="refresh" type="button">Refresh products</button><span id="status" class="sub" role="status"></span></div>
+<div class="note">Preview only. Apollo transport and AI reasoning are simulated. Product activation is disabled.</div></section>
+<section class="panel"><h2>Ask the selected product</h2><label for="message">Your request</label><textarea id="message" placeholder="Describe what you want to see…"></textarea>
+<div class="toolbar"><button id="ask" disabled>Generate preview</button></div></section>
+<section class="panel"><h2>Adaptive preview</h2><div id="output" aria-live="polite" class="sub">Choose a product and submit a request.</div></section>
+</main>
+<script>
+const product=document.getElementById('product'),message=document.getElementById('message'),output=document.getElementById('output'),status=document.getElementById('status'),ask=document.getElementById('ask');
+function clear(node){node.replaceChildren()}
+function element(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);return e}
+async function refresh(){
+ product.disabled=true;ask.disabled=true;status.textContent='Loading…';clear(product);clear(output);
+ try{
+  const r=await fetch('/api/products');const data=await r.json();if(!r.ok)throw Error(data.error||'Discovery failed');
+  for(const p of data.products){const opt=element('option',p.label);opt.value=p.value;product.append(opt)}
+  product.disabled=!data.products.length;ask.disabled=!data.products.length;
+  status.textContent=data.products.length+' candidate products (not activated)';
+ }catch(e){status.textContent='Discovery failed: '+e.message}
+}
+function render(parts){
+ clear(output);
+ for(const part of parts){
+  const wrap=element('div');wrap.className='component';
+  if(part.type==='text'){wrap.append(element('p',part.content||''))}
+  else if(part.type==='input'){const label=element('label',part.label||'Input');const field=element('input');field.disabled=true;field.placeholder='Preview only';wrap.append(label,field)}
+  else if(part.type==='action'){const btn=element('button',part.label||'Action');btn.disabled=true;wrap.append(btn)}
+  else if(part.type==='table'){
+   const table=element('table'),thead=element('thead'),tr=element('tr');
+   for(const col of (part.columns||[]))tr.append(element('th',col));thead.append(tr);table.append(thead);
+   const tbody=element('tbody');for(const row of (part.rows||[])){const tr=element('tr');for(const cell of row)tr.append(element('td',cell));tbody.append(tr)}table.append(tbody);wrap.append(table)
+  }else if(part.type==='chart'){wrap.append(element('p','Chart preview requires validated data and a renderer.'))}
+  output.append(wrap);
+ }
+}
+ask.addEventListener('click',async()=>{
+ ask.disabled=true;clear(output);output.append(element('p','Generating preview…'));
+ try{
+  const r=await fetch('/api/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:product.value,message:message.value})});
+  const data=await r.json();if(!r.ok)throw Error(data.error||'Preview failed');
+  if(data.result.status!=='preview')throw Error('Preview unavailable: '+data.result.status);
+  render(data.result.ui_parts||[]);
+ }catch(e){clear(output);const err=element('p',e.message);err.className='error';output.append(err)}
+ finally{ask.disabled=product.disabled}
+});
+product.addEventListener('change',()=>{clear(output);output.append(element('p','Product changed. Previous preview cleared.'))});
+document.getElementById('refresh').addEventListener('click',refresh);refresh();
+</script></body></html>
