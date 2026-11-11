@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 sys.path.insert(0, str(Path(__file__).resolve().parent / "runtime"))
 from apollo_flow import MorpheusFlow, FlowStop
+from environment import load_environment
 
 REGISTRY = "display_name: Calculator product_id: calculator\ndisplay_name: Hippocrates Labs product_id: hippocrates_labs"
 DOCS = {
@@ -49,6 +50,11 @@ def simulated_ai_reason(product_id, user_message, context, instruction):
     ], "source_document_ids": [x["document_id"] for x in context]}
 
 def create_app(search=None, ai=None):
+    config = load_environment()
+    if config["environment"] == "production":
+        # Live Apollo and AI adapters are not yet implemented or validated.
+        # Never allow a production instance to silently serve simulated data.
+        raise RuntimeError("PRODUCTION_STOP: real Apollo and AI adapters are not implemented")
     app = Flask(__name__, static_folder="web")
     flow = MorpheusFlow(search or simulated_apollo_search, ai or simulated_ai_reason)
 
