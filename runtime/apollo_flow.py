@@ -2,7 +2,6 @@
 No GCS, GitHub registry, or product-specific Python intent enums.
 Search chunks permit discovery/preview, NOT approved runtime activation.
 """
-import re
 from ui_validation import validate_ui_parts, UIValidationError
 from dataclasses import dataclass
 
@@ -14,20 +13,32 @@ class ProductOption:
     product_id: str
 
 class MorpheusFlow:
-    def __init__(self, apollo_search, ai_reason):
+    def __init__(self, apollo_search, ai_reason, registry=None):
         self.search = apollo_search
         self.ai = ai_reason
+        self.registry = registry
         self.options = ()
 
     def discover(self):
-        result = self.search(product_id="morpheus_adaptive_ui", query="Morpheus Product Selector Registry V1 Calculator Hippocrates Labs display_name product_id")
-        if result.get("decision") != "PASS": raise FlowStop("APOLLO_DISCOVERY_FAILED")
-        hits = [r for r in result.get("results", []) if r.get("document_id") == "f93144ea664b494094cee9e1debb2e0f" and r.get("product_id") == "morpheus_adaptive_ui"]
-        if len(hits) != 1: raise FlowStop("REGISTRY_NOT_UNAMBIGUOUS")
-        pairs = re.findall(r"display_name:\s*([^\n]+?)\s+product_id:\s*([a-z][a-z0-9_]*)", hits[0]["content"])
-        if not pairs or len({pid for _, pid in pairs}) != len(pairs): raise FlowStop("INVALID_REGISTRY")
-        self.options = tuple(ProductOption(label.strip(), pid) for label, pid in pairs)
-        return [{"label": p.label, "value": p.product_id} for p in self.options]
+        """Discover approved products from the authoritative Apollo catalog only."""
+        if self.registry is None:
+            raise FlowStop("APOLLO_REGISTRY_NOT_CONFIGURED")
+        try:
+            products = self.registry.list_products()
+            if not isinstance(products, list):
+                raise ValueError("invalid registry response")
+            options, seen = [], set()
+            for product in products:
+                pid, label = product.product_id, product.display_name
+                if not isinstance(pid, str) or not pid or not isinstance(label, str) or not label.strip() or pid in seen:
+                    raise ValueError("invalid or duplicate product")
+                seen.add(pid)
+                options.append(ProductOption(label.strip(), pid))
+            self.options = tuple(options)
+            return [{"label": p.label, "value": p.product_id} for p in self.options]
+        except Exception as exc:
+            self.options = ()
+            raise FlowStop("APOLLO_REGISTRY_DISCOVERY_FAILED") from exc
 
     def ask(self, product_id, user_message):
         if product_id not in {p.product_id for p in self.options}: raise FlowStop("UNKNOWN_PRODUCT")
