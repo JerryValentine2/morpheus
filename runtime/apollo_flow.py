@@ -31,14 +31,32 @@ class MorpheusFlow:
     def ask(self, product_id, user_message):
         if product_id not in {p.product_id for p in self.options}: raise FlowStop("UNKNOWN_PRODUCT")
         if not isinstance(user_message, str) or not user_message.strip(): raise FlowStop("EMPTY_MESSAGE")
-        result = self.search(product_id=product_id, query="AI brain contract adaptive UI components web parts response to: " + user_message[:300])
-        if result.get("decision") != "PASS": raise FlowStop("APOLLO_PRODUCT_SEARCH_FAILED")
-        hits = [r for r in result.get("results", []) if r.get("product_id") == product_id and r.get("content")]
-        if not hits: raise FlowStop("NO_PRODUCT_KNOWLEDGE")
-        context = [{"document_id":r["document_id"],"content":r["content"]} for r in hits[:5]]
-        response = self.ai(product_id=product_id,user_message=user_message,context=context,instruction="Use product-scoped Apollo evidence. Interpret intent and propose safe UI parts. If insufficient, request more context. No invented data, executable UI or activation claims.")
-        if not isinstance(response,dict) or response.get("status") not in ("preview","needs_more_context","stop"): raise FlowStop("INVALID_AI_RESPONSE")
-        if response["status"] == "preview":
-            parts = response.get("ui_parts")
-            if not isinstance(parts,list) or any(not isinstance(p,dict) or p.get("type") not in ("text","table","chart","input","action") for p in parts): raise FlowStop("INVALID_UI_PARTS")
-        return response
+        def retrieve(query):
+            result = self.search(product_id=product_id, query=query)
+            if not isinstance(result, dict) or result.get("decision") != "PASS" or result.get("product_id", product_id) != product_id:
+                raise FlowStop("APOLLO_PRODUCT_SEARCH_FAILED")
+            return [{"document_id":r["document_id"],"content":r["content"][:12000]} for r in result.get("results", [])
+                    if isinstance(r, dict) and r.get("product_id") == product_id
+                    and isinstance(r.get("document_id"), str) and isinstance(r.get("content"), str) and r["content"]][:8]
+        context = retrieve("AI brain contract adaptive UI components web parts response to: " + user_message[:300])
+        if not context: raise FlowStop("NO_PRODUCT_KNOWLEDGE")
+        for round_number in range(3):
+            response = self.ai(product_id=product_id, user_message=user_message, context=context,
+                instruction="Use product-scoped Apollo evidence. Return preview with safe UI parts, stop, or needs_more_context with search_query. Never claim activation.")
+            if not isinstance(response, dict) or response.get("status") not in ("preview", "needs_more_context", "stop"):
+                raise FlowStop("INVALID_AI_RESPONSE")
+            if response["status"] == "preview":
+                parts = response.get("ui_parts")
+                if not isinstance(parts, list) or any(not isinstance(p, dict) or p.get("type") not in ("text","table","chart","input","action") for p in parts):
+                    raise FlowStop("INVALID_UI_PARTS")
+                return response
+            if response["status"] == "stop": return response
+            if round_number == 2: raise FlowStop("RETRIEVAL_LIMIT")
+            query = response.get("search_query")
+            if not isinstance(query, str) or not query.strip() or len(query) > 300:
+                raise FlowStop("INVALID_FOLLOWUP_QUERY")
+            seen = {r["document_id"] for r in context}
+            extra = [r for r in retrieve(query) if r["document_id"] not in seen]
+            if not extra: raise FlowStop("NO_NEW_CONTEXT")
+            context = (context + extra)[:12]
+        raise FlowStop("RETRIEVAL_LIMIT")
