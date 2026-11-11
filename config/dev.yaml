@@ -1,0 +1,10 @@
+environment: development
+server:
+  framework: flask
+apollo:
+  adapter: simulated
+ai:
+  adapter: simulated
+validation:
+  strict: true
+  activation_enabled: false
