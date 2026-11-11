@@ -19,7 +19,7 @@ class TestFollowup(unittest.TestCase):
             self.ai_calls.append(kw)
             if len(kw["context"]) == 1:
                 return {"status":"needs_more_context","search_query":"UI components web parts"}
-            return {"status":"preview","ui_parts":[{"type":"table","rows":[]}]}
+            return {"status":"preview","ui_parts":[{"type":"table","columns":["Name"],"rows":[]}]}
         self.flow = MorpheusFlow(search, ai)
         self.flow.discover()
 
