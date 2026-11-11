@@ -17,7 +17,7 @@ class Adapter:
 def agent(**kw):
  assert kw['context'] and kw['product_id'] in ('calculator','hippocrates_labs')
  if kw['product_id']=='calculator':return {'status':'preview','ui_parts':[{'type':'input','label':'Calculation'},{'type':'text','content':'15% of 200 = 30 (simulated AI)'}]}
- return {'status':'preview','ui_parts':[{'type':'table','rows':[['WBC','7.2','10^3/uL']]},{'type':'chart','source':'synthetic'}]}
+ return {'status':'preview','ui_parts':[{'type':'table','columns':['Measurement','Value','Units'],'rows':[['WBC','7.2','10^3/uL']]},{'type':'chart','label':'Synthetic lab chart'}]}
 class Tests(unittest.TestCase):
  def setUp(self):self.a=Adapter();self.f=MorpheusFlow(self.a,agent)
  def test_discover(self):self.assertEqual(self.f.discover(),[{'label':'Calculator','value':'calculator'},{'label':'Hippocrates Labs','value':'hippocrates_labs'}])
