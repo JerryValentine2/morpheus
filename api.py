@@ -5,9 +5,10 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 sys.path.insert(0, str(Path(__file__).resolve().parent / "runtime"))
 from apollo_flow import MorpheusFlow, FlowStop
+from types import SimpleNamespace
 from environment import load_environment
 
-REGISTRY = "display_name: Calculator product_id: calculator\ndisplay_name: Hippocrates Labs product_id: hippocrates_labs"
+
 DOCS = {
     "calculator": [
         ("9032a125bfd2447e8ac8725ca3179787", "AI brain interprets math questions, requests safe UI; candidate only."),
@@ -20,10 +21,6 @@ DOCS = {
 }
 
 def simulated_apollo_search(product_id, query):
-    if product_id == "morpheus_adaptive_ui":
-        return {"decision": "PASS", "product_id": product_id, "results": [
-            {"product_id": product_id, "document_id": "f93144ea664b494094cee9e1debb2e0f", "content": REGISTRY}
-        ]}
     # Simulate separate brain and UI retrievals, matching the Apollo request boundary.
     docs = DOCS.get(product_id, [])
     is_ui_followup = query.startswith("UI components web parts for ")
@@ -49,14 +46,20 @@ def simulated_ai_reason(product_id, user_message, context, instruction):
         {"type": "table", "columns": ["Measurement", "Value", "Units"], "rows": [["WBC", "7.2", "10^3/uL"]]}
     ], "source_document_ids": [x["document_id"] for x in context]}
 
-def create_app(search=None, ai=None):
+class SimulatedRegistry:
+    """Development-only product fixture; never authoritative or production enabled."""
+    def list_products(self):
+        return [SimpleNamespace(product_id="calculator", display_name="Calculator"),
+                SimpleNamespace(product_id="hippocrates_labs", display_name="Hippocrates Labs")]
+
+def create_app(search=None, ai=None, registry=None):
     config = load_environment()
     if config["environment"] == "production":
         # Live Apollo and AI adapters are not yet implemented or validated.
         # Never allow a production instance to silently serve simulated data.
         raise RuntimeError("PRODUCTION_STOP: real Apollo and AI adapters are not implemented")
     app = Flask(__name__, static_folder="web")
-    flow = MorpheusFlow(search or simulated_apollo_search, ai or simulated_ai_reason)
+    flow = MorpheusFlow(search or simulated_apollo_search, ai or simulated_ai_reason, registry=registry if registry is not None else SimulatedRegistry())
 
     @app.get("/")
     def index():
