@@ -4,6 +4,9 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
 from apollo_flow import MorpheusFlow, FlowStop
+from types import SimpleNamespace
+class Registry:
+    def list_products(self):return [SimpleNamespace(product_id='calculator',display_name='Calculator'),SimpleNamespace(product_id='hippocrates_labs',display_name='Hippocrates Labs')]
 
 class TestFollowup(unittest.TestCase):
     def setUp(self):
@@ -13,24 +16,24 @@ class TestFollowup(unittest.TestCase):
             self.queries.append((product_id, query))
             if product_id == "morpheus_adaptive_ui":
                 return {"decision":"PASS","results":[{"product_id":product_id,"document_id":"f93144ea664b494094cee9e1debb2e0f","content":"display_name: Calculator product_id: calculator display_name: Hippocrates Labs product_id: hippocrates_labs"}]}
-            followup = len(self.queries) > 2
+            followup = len(self.queries) > 1
             return {"decision":"PASS","product_id":product_id,"results":[{"product_id":product_id,"document_id":"ui" if followup else "brain","content":"UI components" if followup else "AI brain"}]}
         def ai(**kw):
             self.ai_calls.append(kw)
             if len(kw["context"]) == 1:
                 return {"status":"needs_more_context","search_query":"UI components web parts"}
             return {"status":"preview","ui_parts":[{"type":"table","columns":["Name"],"rows":[]}]}
-        self.flow = MorpheusFlow(search, ai)
+        self.flow = MorpheusFlow(search, ai, registry=Registry())
         self.flow.discover()
 
     def test_followup(self):
         self.assertEqual(self.flow.ask("calculator","show a table")["status"],"preview")
-        self.assertEqual(len(self.queries),3)
+        self.assertEqual(len(self.queries),2)
         self.assertEqual(len(self.ai_calls[-1]["context"]),2)
 
     def test_scoped_followup(self):
         self.flow.ask("hippocrates_labs","show labs")
-        self.assertEqual([p for p,q in self.queries[1:]],["hippocrates_labs","hippocrates_labs"])
+        self.assertEqual([p for p,q in self.queries],["hippocrates_labs","hippocrates_labs"])
 
     def test_invalid_query(self):
         self.flow.ai=lambda **kw: {"status":"needs_more_context","search_query":""}
