@@ -2,7 +2,7 @@
 Run from repository root: python -m unittest discover -s validation -p test_api_followup.py -v
 """
 import unittest
-from api import create_app
+from api import create_app, SimulatedRegistry
 
 class FollowupApiTests(unittest.TestCase):
     def setUp(self):
@@ -23,19 +23,19 @@ class FollowupApiTests(unittest.TestCase):
             if len(kw["context"]) == 1:
                 return {"status":"needs_more_context","search_query":"UI components for current product"}
             return {"status":"preview","ui_parts":[{"type":"text","content":"Simulated interface"}]}
-        self.client = create_app(search=search, ai=ai).test_client()
+        self.client = create_app(search=search, ai=ai, registry=SimulatedRegistry()).test_client()
 
     def test_calculator_full_sequence(self):
         response = self.client.post("/api/preview", json={"product_id":"calculator","message":"Show result"})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.json["result"]["status"],"preview")
         self.assertEqual(len(self.reason_calls),2)
-        self.assertEqual([p for p,_ in self.calls],["morpheus_adaptive_ui","calculator","calculator"])
+        self.assertEqual([p for p,_ in self.calls],["calculator","calculator"])
 
     def test_hippocrates_full_sequence(self):
         response = self.client.post("/api/preview", json={"product_id":"hippocrates_labs","message":"Show synthetic labs"})
         self.assertEqual(response.status_code,200)
-        self.assertEqual([p for p,_ in self.calls],["morpheus_adaptive_ui","hippocrates_labs","hippocrates_labs"])
+        self.assertEqual([p for p,_ in self.calls],["hippocrates_labs","hippocrates_labs"])
 
     def test_reject_unknown_product(self):
         response = self.client.post("/api/preview",json={"product_id":"unknown","message":"Hi"})
@@ -46,8 +46,8 @@ class FollowupApiTests(unittest.TestCase):
         self.client.post("/api/preview",json={"product_id":"calculator","message":"Hi"})
         self.client.post("/api/preview",json={"product_id":"hippocrates_labs","message":"Hi"})
         self.assertEqual([p for p,_ in self.calls],[
-            "morpheus_adaptive_ui","calculator","calculator",
-            "morpheus_adaptive_ui","hippocrates_labs","hippocrates_labs"])
+            "calculator","calculator",
+            "hippocrates_labs","hippocrates_labs"])
 
     def test_no_activation(self):
         response=self.client.post("/api/preview",json={"product_id":"calculator","message":"Hi"})
