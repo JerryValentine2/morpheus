@@ -1,0 +1,10 @@
+environment: production
+server:
+  framework: flask
+apollo:
+  adapter: gcp_authenticated
+ai:
+  adapter: live
+validation:
+  strict: true
+  activation_enabled: false
