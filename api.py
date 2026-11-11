@@ -23,13 +23,20 @@ def simulated_apollo_search(product_id, query):
         return {"decision": "PASS", "product_id": product_id, "results": [
             {"product_id": product_id, "document_id": "f93144ea664b494094cee9e1debb2e0f", "content": REGISTRY}
         ]}
+    # Simulate separate brain and UI retrievals, matching the Apollo request boundary.
+    docs = DOCS.get(product_id, [])
+    is_ui_followup = query.startswith("UI components web parts for ")
+    selected = docs[1:2] if is_ui_followup else docs[:1]
     return {"decision": "PASS", "product_id": product_id, "results": [
         {"product_id": product_id, "document_id": did, "content": content}
-        for did, content in DOCS.get(product_id, [])
+        for did, content in selected
     ]}
 
 def simulated_ai_reason(product_id, user_message, context, instruction):
     """A deterministic preview stub, NOT a real LLM or verified domain computation."""
+    if len(context) < 2:
+        return {"status": "needs_more_context",
+                "search_query": "UI components web parts for " + product_id}
     if product_id == "calculator":
         return {"status": "preview", "ui_parts": [
             {"type": "text", "content": "Calculator preview (AI simulated; no computation performed)."},
