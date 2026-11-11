@@ -3,6 +3,7 @@ No GCS, GitHub registry, or product-specific Python intent enums.
 Search chunks permit discovery/preview, NOT approved runtime activation.
 """
 import re
+from ui_validation import validate_ui_parts, UIValidationError
 from dataclasses import dataclass
 
 class FlowStop(RuntimeError): pass
@@ -47,8 +48,10 @@ class MorpheusFlow:
                 raise FlowStop("INVALID_AI_RESPONSE")
             if response["status"] == "preview":
                 parts = response.get("ui_parts")
-                if not isinstance(parts, list) or any(not isinstance(p, dict) or p.get("type") not in ("text","table","chart","input","action") for p in parts):
-                    raise FlowStop("INVALID_UI_PARTS")
+                try:
+                    validate_ui_parts(parts)
+                except UIValidationError as exc:
+                    raise FlowStop("INVALID_UI_PARTS: " + str(exc)) from exc
                 return response
             if response["status"] == "stop": return response
             if round_number == 2: raise FlowStop("RETRIEVAL_LIMIT")
