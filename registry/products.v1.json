@@ -12,7 +12,11 @@
       "approved": false,
       "activation_enabled": false,
       "apollo_spec_document_id": "7cbef5aab9304d42a75b3ca7d5264afc",
-      "adapter": "synthetic_lab_results"
+      "brain_execution_policy": "ai_maximal_product_brain",
+      "runtime_capabilities": [
+        "read_authorized_synthetic_labs"
+      ],
+      "review_status": "REVALIDATION_REQUIRED_AI_MAXIMAL"
     },
     {
       "product_id": "calculator",
@@ -21,7 +25,11 @@
       "approved": false,
       "activation_enabled": false,
       "apollo_spec_document_id": "291c70cec4d941a59406da5fd7dca63b",
-      "adapter": "deterministic_arithmetic"
+      "brain_execution_policy": "ai_maximal_product_brain",
+      "runtime_capabilities": [
+        "verified_computation_if_needed"
+      ],
+      "review_status": "REVALIDATION_REQUIRED_AI_MAXIMAL"
     }
   ],
   "policy": {
@@ -31,5 +39,5 @@
     "atomic_switch": true,
     "isolated_product_context": true
   },
-  "notes": "This is a source-controlled candidate registry, not evidence of a deployed loader or authorized activation."
+  "notes": "Candidate registry only; AI-Maximal Architecture correction requires product cartridge revalidation. Runtime not approved. Runtime capabilities are boundaries, not user-intent enums."
 }
