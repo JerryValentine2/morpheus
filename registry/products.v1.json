@@ -2,8 +2,8 @@
   "schema_version": "1.0.0",
   "registry_id": "morpheus_product_registry",
   "owner_product_id": "morpheus_adaptive_ui",
-  "status": "PROPOSED_NOT_RUNTIME_ACTIVE",
-  "source_of_truth": "Morpheus project GitHub repository until deployed runtime storage/API is established",
+  "status": "DEPRECATED_HISTORICAL_SNAPSHOT_DO_NOT_LOAD",
+  "source_of_truth": "Apollo product registry and versioned product cartridges ONLY",
   "products": [
     {
       "product_id": "hippocrates_labs",
@@ -39,5 +39,5 @@
     "atomic_switch": true,
     "isolated_product_context": true
   },
-  "notes": "Candidate registry only; AI-Maximal Architecture correction requires product cartridge revalidation. Runtime not approved. Runtime capabilities are boundaries, not user-intent enums."
+  "notes": "DEPRECATED: retained solely as historical evidence. Not authoritative, not a fallback registry, not approved for runtime discovery or activation. Python must discover approved products from Apollo authoritative catalog; Apollo catalog listing and exact document retrieval interfaces are not yet available, so runtime switching remains STOP."
 }
