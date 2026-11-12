@@ -19,7 +19,7 @@ from cartridge_validation import validate_cartridge, CartridgeValidationError
 BASE_URL = "https://apollo-vector-database-service-927115364189.us-central1.run.app"
 DOCUMENTS = (
     ("calculator", "458aa88001ed4c369f662a934712784e"),
-    ("hippocrates_labs", "8c0d78b09caa44509c742d26295afcba"),
+    ("hippocrates_labs", "f7c8097a2fad4815a54fe37f22700445"),
 )
 
 def verify_one(product_id, document_id, key, *, opener=urlopen):
