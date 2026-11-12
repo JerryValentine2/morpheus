@@ -11,6 +11,7 @@ from apollo_registry import ApolloRegistry, ApolloRegistryError
 from product_execution import execute, ProductExecutionError
 from gemini_adapter import make_gemini_reasoner, GeminiAdapterError
 from ui_validation import validate_ui_parts, UIValidationError
+from development_cartridges import get_development_cartridge
 
 
 DOCS = {
@@ -123,8 +124,12 @@ def create_app(search=None, ai=None, registry=None):
                 not version or not isinstance(message, str) or not 0 < len(message.strip()) <= 4000):
             return jsonify({"error": "INVALID_ADAPTIVE_REQUEST"}), 400
         try:
-            # Approved, activated, SHA256-pinned artifact required even in development.
-            artifact = live_registry.get_product_artifact(pid, version)
+            # Development evaluation requires an explicit, independently pinned
+            # candidate gate; no catalog approval or production activation.
+            if os.environ.get('MORPHEUS_DEV_CARTRIDGES_ENABLED') == 'true':
+                artifact = get_development_cartridge(live_registry, pid, version)
+            else:
+                artifact = live_registry.get_product_artifact(pid, version)
             evidence = [{"document_id": artifact.get("document_id", "approved_artifact"),
                          "content": __import__("json").dumps({
                              "ai_brain": artifact["ai_brain"],
