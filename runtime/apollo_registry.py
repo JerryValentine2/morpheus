@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
+from cartridge_validation import validate_cartridge, CartridgeValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -191,4 +192,9 @@ class ApolloRegistry:
             raise ApolloRegistryError("INVALID_BEHAVIORAL_CONTRACT")
         if artifact.get("compatible_platform", "morpheus_adaptive_ui") != "morpheus_adaptive_ui":
             raise ApolloRegistryError("INCOMPATIBLE_PLATFORM")
+        if "schema_version" in artifact:
+            try:
+                validate_cartridge(artifact, product_id=p.product_id, version=p.version)
+            except CartridgeValidationError as exc:
+                raise ApolloRegistryError(str(exc)) from exc
         return artifact
