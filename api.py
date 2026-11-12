@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "runtime"))
 from apollo_flow import MorpheusFlow, FlowStop
 from types import SimpleNamespace
 from environment import load_environment
+from apollo_registry import ApolloRegistry, ApolloRegistryError
 
 
 DOCS = {
@@ -52,14 +53,30 @@ class SimulatedRegistry:
         return [SimpleNamespace(product_id="calculator", display_name="Calculator"),
                 SimpleNamespace(product_id="hippocrates_labs", display_name="Hippocrates Labs")]
 
+def configured_apollo_registry():
+    """Read exact Apollo catalog identity from configuration; never embed credentials."""
+    if os.environ.get("MORPHEUS_REGISTRY_MODE", "simulated") != "apollo":
+        return None
+    key = os.environ.get("APOLLO_WRITE_KEY", "")
+    return ApolloRegistry(
+        os.environ.get("APOLLO_BASE_URL", "https://apollo-vector-database-service-927115364189.us-central1.run.app"),
+        key,
+        catalog_document_id=os.environ.get("APOLLO_CATALOG_DOCUMENT_ID", "177030db19704abaa93059dcf10c7172"),
+        catalog_sha256=os.environ.get("APOLLO_CATALOG_SHA256", "f9e600689c48ae459ceb7fc4bcdf67d3089f55ab5ae5340a91ac229fe3b8f1b7"),
+    )
+
+
 def create_app(search=None, ai=None, registry=None):
     config = load_environment()
     if config["environment"] == "production":
         # Live Apollo and AI adapters are not yet implemented or validated.
         # Never allow a production instance to silently serve simulated data.
         raise RuntimeError("PRODUCTION_STOP: real Apollo and AI adapters are not implemented")
+    live_registry = configured_apollo_registry() if registry is None else None
+    selected_registry = registry if registry is not None else (live_registry or SimulatedRegistry())
+    registry_mode = "APOLLO_CATALOG" if live_registry is not None else "SIMULATED"
     app = Flask(__name__, static_folder="web")
-    flow = MorpheusFlow(search or simulated_apollo_search, ai or simulated_ai_reason, registry=registry if registry is not None else SimulatedRegistry())
+    flow = MorpheusFlow(search or simulated_apollo_search, ai or simulated_ai_reason, registry=selected_registry)
 
     @app.get("/")
     def index():
@@ -67,17 +84,19 @@ def create_app(search=None, ai=None, registry=None):
 
     @app.get("/api/health")
     def health():
-        return jsonify({"status": "ok", "mode": "SIMULATED", "production_activation": False})
+        return jsonify({"status": "ok", "mode": registry_mode, "production_activation": False})
 
     @app.get("/api/products")
     def products():
         try:
-            return jsonify({"mode": "SIMULATED", "products": flow.discover(), "activation_enabled": False})
-        except FlowStop as exc:
+            return jsonify({"mode": registry_mode, "products": flow.discover(), "activation_enabled": False})
+        except (FlowStop, ApolloRegistryError) as exc:
             return jsonify({"error": str(exc)}), 409
 
     @app.post("/api/preview")
     def preview():
+        if live_registry is not None:
+            return jsonify({"error": "APOLLO_CATALOG_PREVIEW_DISABLED_PENDING_REAL_AI_ADAPTER"}), 409
         data = request.get_json(silent=True)
         if not isinstance(data, dict):
             return jsonify({"error": "INVALID_JSON"}), 400
