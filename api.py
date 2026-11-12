@@ -8,6 +8,7 @@ from apollo_flow import MorpheusFlow, FlowStop
 from types import SimpleNamespace
 from environment import load_environment
 from apollo_registry import ApolloRegistry, ApolloRegistryError
+from product_execution import execute, ProductExecutionError
 
 
 DOCS = {
@@ -92,6 +93,37 @@ def create_app(search=None, ai=None, registry=None):
             return jsonify({"mode": registry_mode, "products": flow.discover(), "activation_enabled": False})
         except (FlowStop, ApolloRegistryError) as exc:
             return jsonify({"error": str(exc)}), 409
+
+    @app.get("/api/candidates")
+    def candidates():
+        if live_registry is None:
+            return jsonify({"error": "APOLLO_CATALOG_NOT_CONFIGURED"}), 409
+        try:
+            entries = live_registry.list_candidates()
+            return jsonify({"mode": "APOLLO_CATALOG", "products": entries,
+                            "production_activation": False})
+        except ApolloRegistryError as exc:
+            return jsonify({"error": str(exc)}), 409
+
+    @app.post("/api/execute")
+    def execute_product():
+        # Functional development path: requires real Apollo catalog identity,
+        # never authorizes a production release or unvalidated AI cartridge.
+        if live_registry is None:
+            return jsonify({"error": "APOLLO_CATALOG_NOT_CONFIGURED"}), 409
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "INVALID_JSON"}), 400
+        pid = data.get("product_id")
+        try:
+            catalog = live_registry.list_candidates()
+            if pid not in {p["product_id"] for p in catalog}:
+                return jsonify({"error": "UNKNOWN_APOLLO_PRODUCT"}), 422
+            result = execute(pid, data)
+            return jsonify({"mode": "FUNCTIONAL_DEVELOPMENT", "production_activation": False,
+                            "result": result})
+        except (ApolloRegistryError, ProductExecutionError) as exc:
+            return jsonify({"error": str(exc)}), 422
 
     @app.post("/api/preview")
     def preview():
