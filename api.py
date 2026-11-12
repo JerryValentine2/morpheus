@@ -9,6 +9,8 @@ from types import SimpleNamespace
 from environment import load_environment
 from apollo_registry import ApolloRegistry, ApolloRegistryError
 from product_execution import execute, ProductExecutionError
+from gemini_adapter import make_gemini_reasoner, GeminiAdapterError
+from ui_validation import validate_ui_parts, UIValidationError
 
 
 DOCS = {
@@ -104,6 +106,48 @@ def create_app(search=None, ai=None, registry=None):
                             "production_activation": False})
         except ApolloRegistryError as exc:
             return jsonify({"error": str(exc)}), 409
+
+    @app.post("/api/adaptive-plan")
+    def adaptive_plan():
+        """Development-only live AI plan, gated by an approved Apollo artifact.
+
+        A plan is untrusted display data, not permission to execute a product.
+        """
+        if live_registry is None:
+            return jsonify({"error": "APOLLO_CATALOG_NOT_CONFIGURED"}), 409
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "INVALID_JSON"}), 400
+        pid, version, message = data.get("product_id"), data.get("version"), data.get("message")
+        if (not isinstance(pid, str) or not pid or not isinstance(version, str) or
+                not version or not isinstance(message, str) or not 0 < len(message.strip()) <= 4000):
+            return jsonify({"error": "INVALID_ADAPTIVE_REQUEST"}), 400
+        try:
+            # Approved, activated, SHA256-pinned artifact required even in development.
+            artifact = live_registry.get_product_artifact(pid, version)
+            evidence = [{"document_id": artifact.get("document_id", "approved_artifact"),
+                         "content": __import__("json").dumps({
+                             "ai_brain": artifact["ai_brain"],
+                             "ui_spec": artifact["ui_spec"],
+                             "behavioral_contract": artifact.get("behavioral_contract"),
+                             "permissions": artifact.get("permissions"),
+                         }, ensure_ascii=False)}]
+            reasoner = make_gemini_reasoner()
+            plan = reasoner(product_id=pid, user_message=message, context=evidence,
+                            instruction="Propose only validated display UI components from the approved Apollo artifact. "
+                                        "Return JSON status preview with ui_parts or stop. "
+                                        "No diagnosis, no executable HTML or JavaScript, no product execution.")
+            if plan.get("status") != "preview":
+                return jsonify({"error": "AI_PLAN_STOP", "status": plan.get("status")}), 409
+            parts = validate_ui_parts(plan.get("ui_parts"))
+            # Never echo model-supplied source identities; provenance comes from the registry.
+            return jsonify({"mode": "LIVE_AI_DEVELOPMENT", "production_activation": False,
+                            "product_id": pid, "version": version,
+                            "ui_parts": parts, "executable": False})
+        except (ApolloRegistryError, GeminiAdapterError, UIValidationError, ValueError, TypeError) as exc:
+            # Fail closed. Do not leak provider or retrieved artifact content.
+            code = str(exc) if isinstance(exc, (ApolloRegistryError, GeminiAdapterError, UIValidationError)) else "INVALID_ARTIFACT"
+            return jsonify({"error": code}), 409
 
     @app.post("/api/execute")
     def execute_product():
