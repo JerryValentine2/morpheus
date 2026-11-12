@@ -16,53 +16,22 @@ button:disabled{opacity:.5;cursor:not-allowed}.toolbar{display:flex;gap:12px;ali
 table{border-collapse:collapse;width:100%}td,th{border:1px solid #d9e1ed;text-align:left;padding:9px}th{background:#f4f7fc}
 </style></head>
 <body>
-<header><h1>Morpheus</h1><div class="sub">Adaptive product interface · simulated integration preview</div></header>
+<header><h1>Morpheus</h1><div class="sub">Adaptive product interface · Apollo-backed functional development</div></header>
 <main>
 <section class="panel"><h2>Choose a product</h2><label for="product">Apollo product</label><select id="product" disabled><option>Loading products…</option></select>
 <div class="toolbar"><button id="refresh" type="button">Refresh products</button><span id="status" class="sub" role="status"></span></div>
-<div class="note">Preview only. Apollo transport and AI reasoning are simulated. Product activation is disabled.</div></section>
-<section class="panel"><h2>Ask the selected product</h2><label for="message">Your request</label><textarea id="message" placeholder="Describe what you want to see…"></textarea>
-<div class="toolbar"><button id="ask" disabled>Generate preview</button></div></section>
-<section class="panel"><h2>Adaptive preview</h2><div id="output" aria-live="polite" class="sub">Choose a product and submit a request.</div></section>
+<div class="note">Functional development mode. Apollo catalog is authoritative; release activation remains disabled. Calculator performs real arithmetic. Labs compares entered values to entered ranges; no diagnosis.</div></section>
+<section class="panel"><h2>Ask the selected product</h2><label for="message">Your request</label><div id="fields"></div>
+<div class="toolbar"><button id="ask" disabled>Run product</button></div></section>
+<section class="panel"><h2>Product result</h2><div id="output" aria-live="polite" class="sub">Choose a product and submit a request.</div></section>
 </main>
 <script>
-const product=document.getElementById('product'),message=document.getElementById('message'),output=document.getElementById('output'),status=document.getElementById('status'),ask=document.getElementById('ask');
-function clear(node){node.replaceChildren()}
+const product=document.getElementById('product'),fields=document.getElementById('fields'),output=document.getElementById('output'),status=document.getElementById('status'),ask=document.getElementById('ask');
 function element(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);return e}
-async function refresh(){
- product.disabled=true;ask.disabled=true;status.textContent='Loading…';clear(product);clear(output);
- try{
-  const r=await fetch('/api/products');const data=await r.json();if(!r.ok)throw Error(data.error||'Discovery failed');
-  for(const p of data.products){const opt=element('option',p.label);opt.value=p.value;product.append(opt)}
-  product.disabled=!data.products.length;ask.disabled=!data.products.length;
-  status.textContent=data.products.length+' candidate products (not activated)';
- }catch(e){status.textContent='Discovery failed: '+e.message}
-}
-function render(parts){
- clear(output);
- for(const part of parts){
-  const wrap=element('div');wrap.className='component';
-  if(part.type==='text'){wrap.append(element('p',part.content||''))}
-  else if(part.type==='input'){const label=element('label',part.label||'Input');const field=element('input');field.disabled=true;field.placeholder='Preview only';wrap.append(label,field)}
-  else if(part.type==='action'){const btn=element('button',part.label||'Action');btn.disabled=true;wrap.append(btn)}
-  else if(part.type==='table'){
-   const table=element('table'),thead=element('thead'),tr=element('tr');
-   for(const col of (part.columns||[]))tr.append(element('th',col));thead.append(tr);table.append(thead);
-   const tbody=element('tbody');for(const row of (part.rows||[])){const tr=element('tr');for(const cell of row)tr.append(element('td',cell));tbody.append(tr)}table.append(tbody);wrap.append(table)
-  }else if(part.type==='chart'){wrap.append(element('p','Chart preview requires validated data and a renderer.'))}
-  output.append(wrap);
- }
-}
-ask.addEventListener('click',async()=>{
- ask.disabled=true;clear(output);output.append(element('p','Generating preview…'));
- try{
-  const r=await fetch('/api/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:product.value,message:message.value})});
-  const data=await r.json();if(!r.ok)throw Error(data.error||'Preview failed');
-  if(data.result.status!=='preview')throw Error('Preview unavailable: '+data.result.status);
-  render(data.result.ui_parts||[]);
- }catch(e){clear(output);const err=element('p',e.message);err.className='error';output.append(err)}
- finally{ask.disabled=product.disabled}
-});
-product.addEventListener('change',()=>{clear(output);output.append(element('p','Product changed. Previous preview cleared.'))});
-document.getElementById('refresh').addEventListener('click',refresh);refresh();
+function field(name,placeholder,value=''){const box=element('div'),label=element('label',name),input=element('input');input.name=name;input.placeholder=placeholder;input.value=value;input.style.cssText='width:100%;padding:10px;margin-bottom:12px';box.append(label,input);return box}
+function showFields(){fields.replaceChildren();output.replaceChildren();if(product.value==='calculator'){fields.append(field('expression','(12 + 8) / 4','(12 + 8) / 4'))}else if(product.value==='hippocrates_labs'){fields.append(element('p','Enter your own lab results and laboratory reference ranges (one per line):'));const area=element('textarea');area.id='labs';area.placeholder='Test name, value, unit, low, high';fields.append(area)} }
+async function refresh(){product.disabled=true;ask.disabled=true;status.textContent='Loading from Apollo…';product.replaceChildren();try{const r=await fetch('/api/candidates');const d=await r.json();if(!r.ok)throw Error(d.error||'Apollo discovery failed');for(const p of d.products){const opt=element('option',p.display_name);opt.value=p.product_id;product.append(opt)}product.disabled=!d.products.length;ask.disabled=!d.products.length;status.textContent=d.products.length+' Apollo catalog products · development execution only';showFields()}catch(e){status.textContent='Apollo unavailable: '+e.message}}
+function render(parts){output.replaceChildren();for(const part of parts){const wrap=element('div');wrap.className='component';if(part.type==='text'){wrap.append(element('p',part.content))}else if(part.type==='table'){const t=element('table'),head=element('tr');for(const h of part.columns)head.append(element('th',h));t.append(head);for(const row of part.rows){const tr=element('tr');for(const cell of row)tr.append(element('td',cell));t.append(tr)}wrap.append(t)}output.append(wrap)}}
+ask.addEventListener('click',async()=>{ask.disabled=true;output.replaceChildren(element('p','Executing…'));try{let payload={product_id:product.value};if(product.value==='calculator'){payload.expression=fields.querySelector('input').value}else{payload.measurements=document.getElementById('labs').value.split('\\n').filter(x=>x.trim()).map(line=>{const p=line.split(',').map(s=>s.trim());if(p.length!==5)throw Error('Each lab line must have: test, value, unit, low, high');return {name:p[0],value:Number(p[1]),unit:p[2],low:Number(p[3]),high:Number(p[4])}})}const r=await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();if(!r.ok)throw Error(d.error||'Execution failed');render(d.result.ui_parts)}catch(e){output.replaceChildren(element('p','Error: '+e.message))}finally{ask.disabled=product.disabled}});
+product.addEventListener('change',showFields);document.getElementById('refresh').addEventListener('click',refresh);refresh();
 </script></body></html>

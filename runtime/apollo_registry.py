@@ -98,6 +98,29 @@ class ApolloRegistry:
         except (ValueError, TypeError, UnicodeError) as exc:
             raise ApolloRegistryError("INVALID_APOLLO_CONTENT") from exc
 
+    def list_candidates(self) -> list[dict]:
+        """Discover catalog candidates without implying authorization to activate."""
+        if not self.catalog_document_id or not self.catalog_sha256:
+            raise ApolloRegistryError("APPROVED_APOLLO_CATALOG_NOT_CONFIGURED")
+        catalog = self._exact_document(self.catalog_product_id, self.catalog_document_id, self.catalog_sha256)
+        if (not isinstance(catalog, dict) or catalog.get("authority") != "apollo" or
+            catalog.get("schema_version") != "1.0" or not isinstance(catalog.get("products"), list)):
+            raise ApolloRegistryError("INVALID_APOLLO_CATALOG")
+        result, seen = [], set()
+        for entry in catalog["products"]:
+            if not isinstance(entry, dict):
+                raise ApolloRegistryError("INVALID_PRODUCT_ENTRY")
+            pid = self._identifier(entry.get("product_id"))
+            version = self._identifier(entry.get("version"))
+            label = entry.get("display_name")
+            if not isinstance(label, str) or not label.strip() or (pid, version) in seen:
+                raise ApolloRegistryError("INVALID_PRODUCT_ENTRY")
+            seen.add((pid, version))
+            result.append({"product_id": pid, "display_name": label.strip(), "version": version,
+                           "approved": entry.get("approved") is True,
+                           "activation_enabled": entry.get("activation_enabled") is True})
+        return result
+
     def list_products(self) -> list[Product]:
         # A digest pinned outside the retrieved catalog prevents a forged catalog
         # from granting its own approval. No configured catalog = no activation.
