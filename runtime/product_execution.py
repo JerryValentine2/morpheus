@@ -42,7 +42,7 @@ def _evaluate(node, depth=0):
 def calculator(expression):
     if not isinstance(expression, str) or not expression.strip() or len(expression) > 200:
         raise ProductExecutionError("INVALID_EXPRESSION")
-    if not re.fullmatch(r"[0-9.()+*/%\\s-]+", expression):
+    if not re.fullmatch(r"[0-9.()+*/%\s-]+", expression):
         raise ProductExecutionError("UNSUPPORTED_EXPRESSION")
     try:
         value = _evaluate(ast.parse(expression, mode="eval").body)
