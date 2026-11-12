@@ -21,8 +21,8 @@ def _identifier(value):
 
 def _strings(values, allowed=None):
     return (isinstance(values, list) and bool(values) and
-            len(values) == len(set(values)) and
-            all(isinstance(x, str) and (allowed is None or x in allowed) for x in values))
+            all(isinstance(x, str) and (allowed is None or x in allowed) for x in values) and
+            len(values) == len(set(values)))
 
 def validate_cartridge(artifact, *, product_id, version):
     """Return validated data, never a product activation decision."""
