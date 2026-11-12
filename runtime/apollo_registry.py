@@ -7,11 +7,15 @@ ID and independently approved digest are configured.
 import hashlib
 import hmac
 import json
+import logging
 import re
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
+
+
+logger = logging.getLogger(__name__)
 
 
 class ApolloRegistryError(RuntimeError):
@@ -76,7 +80,15 @@ class ApolloRegistry:
                 payload = response.read(21 * 1024 * 1024 + 1)
                 if len(payload) > 21 * 1024 * 1024:
                     raise ApolloRegistryError("APOLLO_RESPONSE_TOO_LARGE")
-        except (HTTPError, URLError, OSError, TimeoutError) as exc:
+        except HTTPError as exc:
+            logger.error("Apollo exact-document read failed: HTTP status=%s", exc.code)
+            raise ApolloRegistryError("APOLLO_READ_FAILED") from exc
+        except (URLError, OSError, TimeoutError) as exc:
+            # Exception messages may contain URLs or sensitive metadata.
+            reason = getattr(exc, "reason", None)
+            logger.error("Apollo exact-document read failed: exception=%s reason_type=%s",
+                         type(exc).__name__,
+                         type(reason).__name__ if reason is not None else "none")
             raise ApolloRegistryError("APOLLO_READ_FAILED") from exc
         try:
             result = json.loads(payload)
